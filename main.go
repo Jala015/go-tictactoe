@@ -15,21 +15,19 @@ func main() {
 
 	player := 1 //track current player
 
-	currentBoard[0][0] = 1
-	currentBoard[0][2] = 1
-	currentBoard[1][1] = -1
-	currentBoard[1][2] = -1
-
 	currentBoard.render()
-	if player == 1 {
-		newX, newY := receiveInput(currentBoard)
-		currentBoard[newX][newY] = 1
-		player = -1
-	} else {
-		//todo lógica da máquina
-		player = 1
+	for currentBoard.victory() == 0 {
+		if player == 1 {
+			newX, newY := receiveInput(currentBoard)
+			currentBoard[newX][newY] = 1
+			player = -1
+		} else {
+			//todo lógica da máquina
+			player = 1
+		}
+		currentBoard.render()
+		fmt.Printf("Score: %v\n", currentBoard.calculateScore())
 	}
-	currentBoard.render()
 
 	fmt.Println(currentBoard.victory())
 }
