@@ -23,17 +23,16 @@ func main() {
 func receiveInput(b Board) (int, int) {
 	var boardX, boardY int
 
-	for {
+	for { //loop until valid coordinates
 		fmt.Print("Type coordinates separated by space: ")
 		_, err := fmt.Scan(&boardX, &boardY)
 
-		if err != nil {
+		if err != nil { //input is not valid
 			fmt.Println("Error reading coordinates:", err)
 			continue
 		}
-		// check if user input coordinates are on a valid range
-		if (boardX >= 0 && boardX <= 2) && (boardY >= 0 && boardY <= 2) {
-			if b[boardX][boardY] == 0 {
+		if (boardX >= 0 && boardX <= 2) && (boardY >= 0 && boardY <= 2) { // check if user input coordinates are on a valid range
+			if b[boardX][boardY] == 0 { // check if user input coordinates are on an empy cell
 				break
 			} else {
 				fmt.Println("Coordinate is not empty")
