@@ -18,6 +18,7 @@ func main() {
 	currentBoard[0][0] = 1
 	currentBoard[0][2] = 1
 	currentBoard[1][1] = -1
+	currentBoard[1][2] = -1
 
 	currentBoard.render()
 	if player == 1 {
@@ -29,7 +30,8 @@ func main() {
 		player = 1
 	}
 	currentBoard.render()
-	fmt.Println(currentBoard.calculateScore())
+
+	fmt.Println(currentBoard.victory())
 }
 
 // receives a coordinate to make a move and return the values only when they are valid
@@ -60,9 +62,9 @@ func receiveInput(b Board) (int, int) {
 //draw a small tictactoe board on terminal
 func (b *Board) render() {
 	fmt.Println()
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 3; i++ { //iterate rows
 		fmt.Print(" ")
-		for j := 0; j < 3; j++ {
+		for j := 0; j < 3; j++ { // iterate columns
 			switch b[i][j] {
 			case 0:
 				fmt.Print("■ ")
@@ -111,4 +113,38 @@ func (b *Board) calculateScore() float32 {
 		}
 	}
 	return score
+}
+
+//find coordinates with 0 values
+func (b *Board) availableMoves() [][2]int {
+	var result [][2]int
+	for i := 0; i < 3; i++ { //iterate rows
+		for j := 0; j < 3; j++ { //iterate columns
+			if b[i][j] == 0 {
+				result = append(result, [2]int{i, j})
+			}
+		}
+	}
+	return result
+}
+
+// check victory status
+// 0: game not ended
+// 1: ✗ won
+// 2: ○ won
+// 3: Draw
+func (b *Board) victory() int {
+	currentScore := b.calculateScore()
+	switch {
+	case currentScore >= 100:
+		return 1
+	case currentScore <= -100:
+		return 2
+	default:
+		if len(b.availableMoves()) == 0 {
+			return 3
+		} else {
+			return 0
+		}
+	}
 }
