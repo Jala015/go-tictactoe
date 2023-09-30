@@ -7,17 +7,42 @@ import (
 type Board [3][3]int
 
 func main() {
-	board := Board{
+	currentBoard := Board{
 		[3]int{0, 0, 0},
 		[3]int{0, 0, 0},
 		[3]int{0, 0, 0},
 	}
 
-	renderBoard(board)
+	renderBoard(currentBoard)
+	newX, newY := receiveInput(currentBoard)
+	currentBoard[newX][newY] = 1
+	renderBoard(currentBoard)
+}
 
-	board[0][0] = 1
-	board[1][2] = -1
-	renderBoard(board)
+// receives a coordinate to make a move and return the values only when they are valid
+func receiveInput(b Board) (int, int) {
+	var boardX, boardY int
+
+	for {
+		fmt.Print("Type coordinates separated by space: ")
+		_, err := fmt.Scan(&boardX, &boardY)
+
+		if err != nil {
+			fmt.Println("Error reading coordinates:", err)
+			continue
+		}
+		// check if user input coordinates are on a valid range
+		if (boardX >= 0 && boardX <= 2) && (boardY >= 0 && boardY <= 2) {
+			if b[boardX][boardY] == 0 {
+				break
+			} else {
+				fmt.Println("Coordinate is not empty")
+			}
+		} else {
+			fmt.Println("Coordinates are not on a valid range (0,1 or 2 for each axis)")
+		}
+	}
+	return boardX, boardY
 }
 
 func renderBoard(b Board) {
@@ -39,5 +64,4 @@ func renderBoard(b Board) {
 		fmt.Println()
 	}
 	fmt.Println()
-
 }
