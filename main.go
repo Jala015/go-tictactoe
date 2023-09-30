@@ -8,15 +8,28 @@ type Board [3][3]int
 
 func main() {
 	currentBoard := Board{
-		[3]int{0, 0, 0},
-		[3]int{0, 0, 0},
-		[3]int{0, 0, 0},
+		{0, 0, 0},
+		{0, 0, 0},
+		{0, 0, 0},
 	}
 
-	renderBoard(currentBoard)
-	newX, newY := receiveInput(currentBoard)
-	currentBoard[newX][newY] = 1
-	renderBoard(currentBoard)
+	player := 1 //track current player
+
+	currentBoard[0][0] = 1
+	currentBoard[0][2] = 1
+	currentBoard[1][1] = -1
+
+	currentBoard.render()
+	if player == 1 {
+		newX, newY := receiveInput(currentBoard)
+		currentBoard[newX][newY] = 1
+		player = -1
+	} else {
+		//todo lógica da máquina
+		player = 1
+	}
+	currentBoard.render()
+	fmt.Println(currentBoard.calculateScore())
 }
 
 // receives a coordinate to make a move and return the values only when they are valid
@@ -44,7 +57,8 @@ func receiveInput(b Board) (int, int) {
 	return boardX, boardY
 }
 
-func renderBoard(b Board) {
+//draw a small tictactoe board on terminal
+func (b *Board) render() {
 	fmt.Println()
 	for i := 0; i < 3; i++ {
 		fmt.Print(" ")
@@ -63,4 +77,37 @@ func renderBoard(b Board) {
 		fmt.Println()
 	}
 	fmt.Println()
+}
+
+func (b *Board) calculateScore() int {
+	score := 0
+	winCombinations := [][][2]int{
+		{{0, 0}, {0, 1}, {0, 2}}, // upper row
+		{{1, 0}, {1, 1}, {1, 2}}, // middle row
+		{{2, 0}, {2, 1}, {2, 2}}, // lower row
+		{{0, 0}, {1, 0}, {2, 0}}, // left column
+		{{0, 1}, {1, 1}, {2, 1}}, // middle column
+		{{0, 2}, {1, 2}, {2, 2}}, // right column
+		{{0, 2}, {1, 1}, {2, 0}}, // ascending diagonal
+		{{0, 0}, {1, 1}, {2, 2}}, // descending diagonal
+	}
+	for _, line := range winCombinations {
+		sum := 0
+		for _, coord := range line {
+			sum += b[coord[0]][coord[1]]
+		}
+		switch sum {
+		case 3:
+			score = 100
+			break
+		case -3:
+			score = -100
+			break
+		case 2:
+			score += 40
+		case -2:
+			score -= 40
+		}
+	}
+	return score
 }
