@@ -82,7 +82,7 @@ func (b *Board) render() {
 //give a score to the current board configuration. The bigger the score, higher chances to win.
 func (b *Board) calculateScore() float32 {
 	var score float32 = 0
-	winCombinations := [][][2]int{
+	winCombinations := [8][3][2]int{
 		{{0, 0}, {0, 1}, {0, 2}}, // upper row
 		{{1, 0}, {1, 1}, {1, 2}}, // middle row
 		{{2, 0}, {2, 1}, {2, 2}}, // lower row
@@ -99,15 +99,15 @@ func (b *Board) calculateScore() float32 {
 		}
 		switch sum {
 		case 3:
-			score = 100
-			break
+			score = 100.0
+			return score
 		case -3:
-			score = -100
-			break
+			score = -100.0
+			return score
 		case 2:
-			score += (100 - score) / 2
+			score += (100.0 - score) / 2
 		case -2:
-			score += (-100 - score) / 2
+			score += (-100.0 - score) / 2
 		}
 	}
 	return score
