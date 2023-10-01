@@ -17,7 +17,7 @@ func main() {
 		{0, 0, 0},
 	}
 
-	//track current player. Set to -1 for the computer to start playing
+	//track current player. Set to 1 for the computer to start playing
 	player := -1
 
 	currentBoard.render(Coordinate{5, 5})
@@ -31,7 +31,7 @@ func main() {
 			fmt.Println("👨‍💻User turn (✗):")
 			newX, newY = receiveInput(currentBoard)
 			currentBoard[newX][newY] = -1
-			player = 1 //invert player
+			player *= -1 //invert player
 		} else {
 			//
 			// 🤖computer plays
@@ -54,7 +54,7 @@ func main() {
 			currentBoard[newX][newY] = 1
 			fmt.Printf("Ranks: %v\n", moves)
 			fmt.Printf("Computer has simulated %v moves\n", count)
-			player = -1 //invert player
+			player *= -1 //invert player
 		}
 		currentBoard.render(Coordinate{newX, newY})
 	}
