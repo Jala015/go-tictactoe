@@ -18,20 +18,20 @@ func main() {
 	}
 
 	//track current player. Set to -1 for the computer to start playing
-	player := 1
+	player := -1
 
 	currentBoard.render(Coordinate{5, 5})
 	for currentBoard.victory() == 0 {
 		var newX, newY int
-		if player == 1 {
+		if player == -1 {
 			//
 			// 👨‍💻 user plays
 			//
 
 			fmt.Println("👨‍💻User turn (✗):")
 			newX, newY = receiveInput(currentBoard)
-			currentBoard[newX][newY] = 1
-			player = -1
+			currentBoard[newX][newY] = -1
+			player = 1 //invert player
 		} else {
 			//
 			// 🤖computer plays
@@ -42,19 +42,19 @@ func main() {
 			count := 8
 			moves := currentBoard.rankMoves(1, &count)
 			//get best ranked coordinate
-			var minRank float32 = 1000
+			var maxRank float32 = -500000
 			var bestCoord Coordinate
 			for coord, rank := range moves {
-				if rank < minRank {
-					minRank = rank
+				if rank > maxRank {
+					maxRank = rank
 					bestCoord = coord
 				}
 			}
 			newX, newY = bestCoord[0], bestCoord[1]
-			currentBoard[newX][newY] = -1
+			currentBoard[newX][newY] = 1
 			fmt.Printf("Ranks: %v\n", moves)
 			fmt.Printf("Computer has simulated %v moves\n", count)
-			player = 1
+			player = -1 //invert player
 		}
 		currentBoard.render(Coordinate{newX, newY})
 	}
@@ -107,13 +107,13 @@ func (b *Board) render(lastMove Coordinate) {
 			switch b[i][j] {
 			case 0:
 				fmt.Fprintf(os.Stdout, "%s%s%s", colorBlack, "■ ", colorNone)
-			case 1:
+			case -1:
 				if lastMove == [2]int{i, j} {
 					fmt.Fprintf(os.Stdout, "%s%s%s", colorRed, "✗ ", colorNone)
 				} else {
 					fmt.Print("✗ ")
 				}
-			case -1:
+			case 1:
 				if lastMove == [2]int{i, j} {
 					fmt.Fprintf(os.Stdout, "%s%s%s", colorRed, "○ ", colorNone)
 				} else {
@@ -131,6 +131,8 @@ func (b *Board) render(lastMove Coordinate) {
 //give a score to the current board configuration. The bigger the score, higher chances to win.
 func (b *Board) calculateScore() float32 {
 	var score float32 = 0
+	pos2 := 0
+	neg2 := 0
 	winCombinations := [8][3]Coordinate{
 		{{0, 0}, {0, 1}, {0, 2}}, // upper row
 		{{1, 0}, {1, 1}, {1, 2}}, // middle row
@@ -148,22 +150,30 @@ func (b *Board) calculateScore() float32 {
 		}
 		switch sum {
 		case 3:
-			score = 100.0
+			score = 1000.0
 			return score
 		case -3:
-			score = -100.0
+			score = -1000.0
 			return score
 		case 2:
-			score += (100.0 - score) / 2
+			pos2++
+			score += 20
 		case -2:
-			score += (-100.0 - score) / 2
+			neg2++
+			score -= 20
 		}
+	}
+	if pos2 >= 2 {
+		return 300
+	}
+	if neg2 >= 2 {
+		return -300
 	}
 	return score
 }
 
 //find coordinates with 0 values
-func (b *Board) availableMoves() []Coordinate {
+func (b Board) availableMoves() []Coordinate {
 	var result []Coordinate
 	for i := 0; i < 3; i++ { //iterate rows
 		for j := 0; j < 3; j++ { //iterate columns
@@ -180,13 +190,13 @@ func (b *Board) availableMoves() []Coordinate {
 // 1: ✗ won
 // 2: ○ won
 // 3: Draw
-func (b *Board) victory() int {
+func (b Board) victory() int {
 	currentScore := b.calculateScore()
 	switch {
-	case currentScore >= 100:
-		return 1
-	case currentScore <= -100:
+	case currentScore >= 1000:
 		return 2
+	case currentScore <= -1000:
+		return 1
 	default:
 		if len(b.availableMoves()) == 0 {
 			return 3
@@ -202,20 +212,30 @@ func (b Board) rankMoves(r int, counter *int) map[Coordinate]float32 {
 	moveScores := make(map[Coordinate]float32)
 
 	for _, move := range available {
-		b2 := b
-		b2[move[0]][move[1]] = 1
-		score := b2.calculateScore()
-		available2Length := len(b2.availableMoves())
+		var b2 Board = b
+		var score float32 = 0.0
+
+		// simulate player or user moves
+		if r%2 == 0 {
+			b2[move[0]][move[1]] = -1
+		} else {
+			b2[move[0]][move[1]] = 1
+		}
+		score = b2.calculateScore()
+
+		if r < maxRecursionLevel && b2.victory() == 0 { //iterate trough next moves
 			*counter++ //count how many times the function executed
-			//find average moveScores2 value
+			moveScores2 := b2.rankMoves(r+1, counter)
+			//sum scores to evaluate how balanced is the scenario
 			var sum float32
 			for _, s := range moveScores2 {
 				sum += s
 			}
-			averageScores2 := sum / float32(available2Length)
-			score = (score + averageScores2) / 2
+			averageScores2 := sum
+			score = (score + averageScores2*0.9) / 1.9
 		}
 		moveScores[move] = score
 	}
+
 	return moveScores
 }
