@@ -5,6 +5,9 @@ import (
 )
 
 type Board [3][3]int
+type Coordinate [2]int
+
+var maxRecursionLevel int = 3
 
 func main() {
 	currentBoard := Board{
@@ -18,18 +21,46 @@ func main() {
 	currentBoard.render()
 	for currentBoard.victory() == 0 {
 		if player == 1 {
+			//
+			// 👨‍💻 user plays
+			//
+
+			fmt.Println("👨‍💻User turn (✗):")
 			newX, newY := receiveInput(currentBoard)
 			currentBoard[newX][newY] = 1
 			player = -1
 		} else {
-			//todo lógica da máquina
+			//
+			// 🤖computer plays
+			//
+
+			fmt.Println("🤖 Computer turn (○):")
+			// list possible moves by ranking
+			moves := currentBoard.rankMoves(1)
+			//get best ranked coordinate
+			var maxRank float32 = 0
+			var minCoord Coordinate
+			for coord, rank := range moves {
+				if rank > maxRank {
+					maxRank = rank
+					minCoord = coord
+				}
+			}
+			newX, newY := minCoord[0], minCoord[1]
+			currentBoard[newX][newY] = -1
 			player = 1
 		}
 		currentBoard.render()
-		fmt.Printf("Score: %v\n", currentBoard.calculateScore())
 	}
 
-	fmt.Println(currentBoard.victory())
+	switch currentBoard.victory() {
+	case 1:
+		fmt.Println("✗ wins!")
+	case 2:
+		fmt.Println("○ wins!")
+	case 3:
+		fmt.Println("Draw!")
+	}
 }
 
 // receives a coordinate to make a move and return the values only when they are valid
@@ -82,7 +113,7 @@ func (b *Board) render() {
 //give a score to the current board configuration. The bigger the score, higher chances to win.
 func (b *Board) calculateScore() float32 {
 	var score float32 = 0
-	winCombinations := [8][3][2]int{
+	winCombinations := [8][3]Coordinate{
 		{{0, 0}, {0, 1}, {0, 2}}, // upper row
 		{{1, 0}, {1, 1}, {1, 2}}, // middle row
 		{{2, 0}, {2, 1}, {2, 2}}, // lower row
@@ -114,8 +145,8 @@ func (b *Board) calculateScore() float32 {
 }
 
 //find coordinates with 0 values
-func (b *Board) availableMoves() [][2]int {
-	var result [][2]int
+func (b *Board) availableMoves() []Coordinate {
+	var result []Coordinate
 	for i := 0; i < 3; i++ { //iterate rows
 		for j := 0; j < 3; j++ { //iterate columns
 			if b[i][j] == 0 {
@@ -145,4 +176,29 @@ func (b *Board) victory() int {
 			return 0
 		}
 	}
+}
+
+//simulate next moves and create a ranking. r represents how many moves ahead to consider.
+func (b Board) rankMoves(r int) map[Coordinate]float32 {
+	available := b.availableMoves()
+	moveScores := make(map[Coordinate]float32)
+
+	for _, move := range available {
+		b2 := b
+		b2[move[0]][move[1]] = 1
+		score := b2.calculateScore()
+		available2Length := len(b2.availableMoves())
+		if r < maxRecursionLevel && available2Length > 0 { //iterate trough next moves
+			moveScores2 := b2.rankMoves(r + 1)
+			//find average moveScores2 value
+			var sum float32
+			for _, s := range moveScores2 {
+				sum += s
+			}
+			averageScores2 := sum / float32(available2Length)
+			score = (score + averageScores2) / 2
+		}
+		moveScores[move] = score
+	}
+	return moveScores
 }
