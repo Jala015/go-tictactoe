@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 type Board [3][3]int
@@ -16,17 +17,19 @@ func main() {
 		{0, 0, 0},
 	}
 
-	player := 1 //track current player
+	//track current player. Set to -1 for the computer to start playing
+	player := 1
 
-	currentBoard.render()
+	currentBoard.render(Coordinate{5, 5})
 	for currentBoard.victory() == 0 {
+		var newX, newY int
 		if player == 1 {
 			//
 			// 👨‍💻 user plays
 			//
 
 			fmt.Println("👨‍💻User turn (✗):")
-			newX, newY := receiveInput(currentBoard)
+			newX, newY = receiveInput(currentBoard)
 			currentBoard[newX][newY] = 1
 			player = -1
 		} else {
@@ -36,21 +39,24 @@ func main() {
 
 			fmt.Println("🤖 Computer turn (○):")
 			// list possible moves by ranking
-			moves := currentBoard.rankMoves(1)
+			count := 8
+			moves := currentBoard.rankMoves(1, &count)
 			//get best ranked coordinate
-			var maxRank float32 = 0
-			var minCoord Coordinate
+			var minRank float32 = 1000
+			var bestCoord Coordinate
 			for coord, rank := range moves {
-				if rank > maxRank {
-					maxRank = rank
-					minCoord = coord
+				if rank < minRank {
+					minRank = rank
+					bestCoord = coord
 				}
 			}
-			newX, newY := minCoord[0], minCoord[1]
+			newX, newY = bestCoord[0], bestCoord[1]
 			currentBoard[newX][newY] = -1
+			fmt.Printf("Ranks: %v\n", moves)
+			fmt.Printf("Computer has simulated %v moves\n", count)
 			player = 1
 		}
-		currentBoard.render()
+		currentBoard.render(Coordinate{newX, newY})
 	}
 
 	switch currentBoard.victory() {
@@ -85,22 +91,34 @@ func receiveInput(b Board) (int, int) {
 			fmt.Println("Coordinates are not on a valid range (1,2 or 3 for each axis)")
 		}
 	}
-	return boardX, boardY
+	return boardX - 1, boardY - 1
 }
 
 //draw a small tictactoe board on terminal
-func (b *Board) render() {
+func (b *Board) render(lastMove Coordinate) {
+	const colorRed = "\033[0;31m"
+	const colorBlack = "\033[0;30m"
+	const colorNone = "\033[0m"
+
 	fmt.Println()
 	for i := 0; i < 3; i++ { //iterate rows
 		fmt.Print(" ")
 		for j := 0; j < 3; j++ { // iterate columns
 			switch b[i][j] {
 			case 0:
-				fmt.Print("■ ")
+				fmt.Fprintf(os.Stdout, "%s%s%s", colorBlack, "■ ", colorNone)
 			case 1:
-				fmt.Print("✗ ")
+				if lastMove == [2]int{i, j} {
+					fmt.Fprintf(os.Stdout, "%s%s%s", colorRed, "✗ ", colorNone)
+				} else {
+					fmt.Print("✗ ")
+				}
 			case -1:
-				fmt.Print("○ ")
+				if lastMove == [2]int{i, j} {
+					fmt.Fprintf(os.Stdout, "%s%s%s", colorRed, "○ ", colorNone)
+				} else {
+					fmt.Print("○ ")
+				}
 			default:
 				fmt.Print("? ")
 			}
@@ -179,7 +197,7 @@ func (b *Board) victory() int {
 }
 
 //simulate next moves and create a ranking. r represents how many moves ahead to consider.
-func (b Board) rankMoves(r int) map[Coordinate]float32 {
+func (b Board) rankMoves(r int, counter *int) map[Coordinate]float32 {
 	available := b.availableMoves()
 	moveScores := make(map[Coordinate]float32)
 
@@ -188,8 +206,7 @@ func (b Board) rankMoves(r int) map[Coordinate]float32 {
 		b2[move[0]][move[1]] = 1
 		score := b2.calculateScore()
 		available2Length := len(b2.availableMoves())
-		if r < maxRecursionLevel && available2Length > 0 { //iterate trough next moves
-			moveScores2 := b2.rankMoves(r + 1)
+			*counter++ //count how many times the function executed
 			//find average moveScores2 value
 			var sum float32
 			for _, s := range moveScores2 {
