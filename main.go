@@ -75,14 +75,14 @@ func receiveInput(b Board) (int, int) {
 			fmt.Println("Error reading coordinates:", err)
 			continue
 		}
-		if (boardX >= 0 && boardX <= 2) && (boardY >= 0 && boardY <= 2) { // check if user input coordinates are on a valid range
-			if b[boardX][boardY] == 0 { // check if user input coordinates are on an empy cell
+		if (boardX >= 1 && boardX <= 3) && (boardY >= 1 && boardY <= 3) { // check if user input coordinates are on a valid range
+			if b[boardX-1][boardY-1] == 0 { // check if user input coordinates are on an empy cell
 				break
 			} else {
 				fmt.Println("Coordinate is not empty")
 			}
 		} else {
-			fmt.Println("Coordinates are not on a valid range (0,1 or 2 for each axis)")
+			fmt.Println("Coordinates are not on a valid range (1,2 or 3 for each axis)")
 		}
 	}
 	return boardX, boardY
